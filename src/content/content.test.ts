@@ -53,6 +53,27 @@ describe("profile 内容", () => {
   it("工龄与简历一致", () => {
     expect(profile.years).toBe(11)
   })
+
+  // 定位句被拆成 headline + headlineAccent 是为了在首屏做排版对比色，
+  // 但整体才是「一句话」。曾出过 bug：layout.tsx 的 meta description
+  // 只取了 headline，于是分享卡片上显示的是「从写页面，到」这种半句。
+  it("定位句必须两段拼起来才完整，半句不可单独当作描述", () => {
+    expect(profile.headline.trim()).not.toBe("")
+    expect(profile.headlineAccent.trim()).not.toBe("")
+
+    const positioning = `${profile.headline}${profile.headlineAccent}`
+
+    // 拼接后应比单独半句更长，且以强调段收尾（半句是悬空的连接词，不是完整句）
+    expect(positioning.length).toBeGreaterThan(profile.headline.length)
+    expect(positioning.endsWith(profile.headlineAccent)).toBe(true)
+
+    // 描述 = 完整定位句 + 简介
+    const description = `${positioning}。${profile.intro}`
+    expect(description).toContain(profile.headlineAccent)
+    expect(description).not.toBe(profile.headline)
+    expect(description.endsWith("。")).toBe(true)
+    expect(description.length).toBeGreaterThan(50)
+  })
 })
 
 describe("技术栈内容", () => {
