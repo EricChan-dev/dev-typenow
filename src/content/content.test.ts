@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { journey, journeyAxes } from "./journey"
 import { profile } from "./profile"
+import { stack } from "./stack"
 
 describe("心路历程内容", () => {
   it("恰好五个节点", () => {
@@ -51,5 +52,52 @@ describe("profile 内容", () => {
 
   it("工龄与简历一致", () => {
     expect(profile.years).toBe(11)
+  })
+})
+
+describe("技术栈内容", () => {
+  it("恰好五组，key 不重复", () => {
+    expect(stack).toHaveLength(5)
+    const keys = stack.map((g) => g.key)
+    expect(new Set(keys).size).toBe(keys.length)
+  })
+
+  it("每组至少三项", () => {
+    for (const g of stack) {
+      expect(g.items.length, `${g.key} 项数太少`).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it("同一项不重复出现在不同组里", () => {
+    const all = stack.flatMap((g) => g.items.map((i) => i.name))
+    const dupes = all.filter((n, i) => all.indexOf(n) !== i)
+    expect(dupes, `重复项：${dupes.join(", ")}`).toEqual([])
+  })
+
+  it("年限在合理区间（1–15 年）", () => {
+    for (const g of stack) {
+      for (const i of g.items) {
+        expect(i.years, `${i.name} 年限越界`).toBeGreaterThanOrEqual(1)
+        expect(i.years, `${i.name} 年限越界`).toBeLessThanOrEqual(15)
+      }
+    }
+  })
+
+  it("每项名称与年限都不为空", () => {
+    for (const g of stack) {
+      for (const i of g.items) {
+        expect(i.name.trim(), `${g.key} 有空名称`).not.toBe("")
+        expect(Number.isInteger(i.years), `${i.name} 年限须为整数`).toBe(true)
+      }
+    }
+  })
+
+  it("每组都有主力技术", () => {
+    for (const g of stack) {
+      expect(
+        g.items.some((i) => i.primary),
+        `${g.key} 没有标主力技术`,
+      ).toBe(true)
+    }
   })
 })
