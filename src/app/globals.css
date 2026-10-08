@@ -1,32 +1,157 @@
 @import "tailwindcss";
 
+/*
+ * 视觉语言：玻璃态（Glassmorphism）。
+ * 参照 lks0426.com 的编译产物取值，但字体改用无衬线——它原本用 Inter，
+ * 中文正文用系统无衬线，标题靠字重和渐变而非衬线区分层级。
+ *
+ * 关键约束：毛玻璃必须**背后有东西可透**。所以 html 铺渐变、body::before/::after
+ * 放两个固定的模糊光斑；若只在纯白底上做 backdrop-blur，看起来就是一块灰。
+ */
 @theme {
-  --color-canvas: #faf8f5;
+  --color-ink: #0f172a;
+  --color-ink-soft: #475569;
+  --color-ink-faint: #94a3b8;
+  --color-rule: rgba(15, 23, 42, 0.1);
+  --color-rule-soft: rgba(15, 23, 42, 0.06);
   --color-surface: #ffffff;
-  --color-ink: #1a1a1a;
-  --color-ink-soft: #5c554d;
-  --color-ink-faint: #a89f95;
-  --color-rule: #e0dad2;
-  --color-rule-soft: #ede8e1;
-  --color-accent: #b45309;
-  --color-accent-wash: #f3ede5;
 
-  --font-serif: Georgia, "Songti SC", "Noto Serif SC", serif;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "PingFang SC", sans-serif;
+  /* 强调色：lks0426 里出现最多的那组蓝→紫→青 */
+  --color-accent: #2563eb;
+  --color-accent-2: #7c3aed;
+  --color-accent-3: #0891b2;
+  --color-accent-wash: rgba(37, 99, 235, 0.08);
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 html {
   scroll-behavior: smooth;
+  /* 模糊光斑会溢出视口；用 clip 而非 hidden，避免给 html 造出滚动容器 */
+  overflow-x: clip;
+  background: linear-gradient(160deg, #eef2ff 0%, #f0f9ff 45%, #fdf4ff 100%);
+  background-attachment: fixed;
 }
 
 body {
-  background-color: var(--color-canvas);
+  background: transparent;
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
-.contact-fragments {
-  display: inline;
+/* 两团模糊光斑，给玻璃提供可透的背景。fixed + pointer-events:none 不参与布局 */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  border-radius: 9999px;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+body::before {
+  top: -8rem;
+  left: -6rem;
+  width: 28rem;
+  height: 28rem;
+  background: rgba(129, 140, 248, 0.45);
+}
+
+body::after {
+  right: -6rem;
+  top: 12rem;
+  width: 30rem;
+  height: 30rem;
+  background: rgba(103, 232, 249, 0.4);
+}
+
+/*
+ * 注意 backdrop-filter 的写法：**必须把 -webkit- 写在前面、无前缀写在后面**。
+ *
+ * Lightning CSS 会把同一条规则里重复的属性合并成最后一条。写成「无前缀在前、
+ * -webkit- 在后」时，产物里只剩 `-webkit-backdrop-filter`——而现代 Chrome 已
+ * 不再支持这个前缀别名（`CSS.supports('-webkit-backdrop-filter','blur(1px)')`
+ * 返回 false），结果是玻璃模糊**在所有 Chromium 浏览器里都没有渲染**。
+ * 已用 CDP 实测确认过这个失效状态，不是猜测。
+ *
+ * 顺序反过来后，产物里保留的是无前缀版本（Chrome/Firefox/Safari 18+ 通用）；
+ * 老 Safari 只认前缀，所以再用一个 @supports 块单独补上，且该块在 Chrome 里
+ * 不会命中（Chrome 的 supports('-webkit-backdrop-filter') 为 false）。
+ */
+@layer components {
+  /* 玻璃卡片。三层：半透明底、1px 亮边、外阴影 + 顶部内高光（内高光是关键，
+     它模拟玻璃的厚度，缺了这条整块会显得像半透明色块） */
+  .glass {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.88),
+      rgba(255, 255, 255, 0.68) 50%,
+      rgba(248, 250, 252, 0.88)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.04),
+      0 8px 24px rgba(15, 23, 42, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    -webkit-backdrop-filter: blur(16px) saturate(130%);
+    backdrop-filter: blur(16px) saturate(130%);
+  }
+
+  /* 更实的玻璃，用于导航这类需要压住滚动内容的层 */
+  .glass-nav {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(255, 255, 255, 0.86)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow:
+      0 2px 12px rgba(15, 23, 42, 0.07),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+}
+
+/* 只认 -webkit- 前缀的老 Safari（16.4–17.x）。现代 Chrome 不命中此块。 */
+@supports (-webkit-backdrop-filter: blur(1px)) {
+  .glass {
+    -webkit-backdrop-filter: blur(16px) saturate(130%);
+  }
+  .glass-nav {
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+  }
+}
+
+@layer components {
+  /* 渐变文字与渐变胶囊按钮，站点的两个强调件 */
+  .grad-text {
+    background: linear-gradient(135deg, #2563eb, #7c3aed 50%, #0891b2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .grad-btn {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+  }
+
+  .grad-rule {
+    background: linear-gradient(180deg, #2563eb, #7c3aed 50%, #0891b2);
+  }
+}
+
+/* 老浏览器不支持 backdrop-filter 时，玻璃会退化成几乎看不见的浅色块。
+   给个实底兜住可读性。 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-nav {
+    background: rgba(255, 255, 255, 0.97);
+  }
 }

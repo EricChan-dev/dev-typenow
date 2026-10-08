@@ -20,7 +20,7 @@ export function ContactReveal() {
       <button
         type="button"
         onClick={() => setShown(true)}
-        className="rounded-sm border border-rule px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent"
+        className="grad-btn rounded-xl px-4 py-2 text-sm font-semibold transition-transform hover:-translate-y-0.5"
       >
         查看联系方式
       </button>
@@ -32,10 +32,10 @@ export function ContactReveal() {
 
   return (
     <span className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-      <a href={`tel:${phone}`} className="text-accent hover:underline">
+      <a href={`tel:${phone}`} className="font-semibold text-accent hover:underline">
         {phone}
       </a>
-      <a href={`mailto:${email}`} className="text-accent hover:underline">
+      <a href={`mailto:${email}`} className="font-semibold text-accent hover:underline">
         {email}
       </a>
     </span>

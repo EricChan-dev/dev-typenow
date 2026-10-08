@@ -17,10 +17,22 @@ npx tsc --noEmit
 pnpm run lint
 ```
 
-26 条用例，覆盖两类真实会出错的地方：
+31 条用例，覆盖三类真实会出错的地方：
 
 - **内容完整性**（20 条）：心路历程字段与年份递增、描述长度区间、技术栈年限越界与重复项、项目五段齐全、每条取舍必须写明代价、定位句必须两段拼完整。
 - **隐私守卫**（6 条）：`revealContact()` 拼接，以及渲染产物中不得出现完整手机号/邮箱。
+- **视觉守卫**（5 条）：玻璃态 `backdrop-filter` 的前缀顺序（见下「视觉语言」——写反会让模糊在 Chrome 里静默失效）。
+
+## 视觉语言
+
+玻璃态（glassmorphism）：渐变浅色底 + 模糊光斑 + 半透明卡片 + 蓝紫青渐变强调色。无衬线字重分层，不用衬线。
+
+三处容易踩的地方：
+
+1. **`backdrop-filter` 的前缀顺序**。`src/app/globals.css` 里必须写成 `-webkit-` 在前、无前缀在后。Lightning CSS 会把同一规则里重复的属性**合并成最后一条**，顺序写反后产物里只剩 `-webkit-backdrop-filter`，而现代 Chrome 已不支持这个前缀别名（`CSS.supports('-webkit-backdrop-filter','blur(1px)')` 返回 `false`）——结果是整个站点最核心的模糊效果在所有 Chromium 浏览器里都不渲染，而 build / tsc / lint / 单测照样全绿。`src/app/glass-css.test.ts` 专门守这条。
+2. **毛玻璃背后必须有东西可透**。只在纯白底上做 `backdrop-filter` 看起来就是一块灰。所以 `html` 铺了渐变底，`body::before/::after` 放了两团 `filter: blur(80px)` 的光斑。
+3. **`overflow-x: clip` 而非 `hidden`**。光斑会溢出视口，`overflow-x: hidden` 会把 `html` 变成滚动容器（进而破坏 `position: sticky` 的表现），`clip` 不会。
+
 
 ## 部署
 
