@@ -41,12 +41,18 @@ export function Hero() {
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <ContactReveal />
-          <a
-            href="/resume.pdf"
-            className="rounded-sm border border-rule bg-surface px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent"
+          {/* PDF 简历暂不发布：文件里含明文手机号，会绕过「点击才显示」的隐私保护，
+              而本仓库是公开的。这里保留按钮位（用户 2026-10-08 选择「保留按钮占位」），
+              但不指向不存在的文件——求职站上最不该有的就是一个点了 404 的按钮。
+              确认要发布时，把 public/resume.pdf 放进去并改回 <a href="/resume.pdf">。 */}
+          <button
+            type="button"
+            disabled
+            title="PDF 简历整理中，可先通过「查看联系方式」联系我"
+            className="cursor-not-allowed rounded-sm border border-rule-soft bg-surface px-4 py-2 text-sm text-ink-faint"
           >
-            下载 PDF 简历
-          </a>
+            简历 PDF（整理中）
+          </button>
         </div>
       </div>
     </section>
